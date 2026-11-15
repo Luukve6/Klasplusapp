@@ -7,8 +7,8 @@ import { useLaden } from './useLaden';
  * Los geladen: als het profiel mislukt, verschijnen de cijfers toch.
  */
 export function useCijfers() {
-  const cijfers = useLaden(() => api.cijfers(), []);
-  const profiel = useLaden(() => api.profiel(), []);
+  const cijfers = useLaden(() => api.cijfers(), [], 'cijfers');
+  const profiel = useLaden(() => api.profiel(), [], 'profiel');
   const p = profiel.data?.data;
   const { vernieuw: vernieuwCijfers } = cijfers;
   const { vernieuw: vernieuwProfiel } = profiel;

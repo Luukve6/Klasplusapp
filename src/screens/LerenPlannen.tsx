@@ -1,3 +1,4 @@
+import { KiesVeld } from '../components/ui/KiesVeld';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
@@ -192,7 +193,7 @@ export function LerenPlannen() {
               </select>
             </Invoerrij>
             <Invoerrij label="Tijd" voor="leren-alle">
-              <input
+              <KiesVeld
                 id="leren-alle"
                 type="time"
                 className="invoerrij__veld"
@@ -242,7 +243,7 @@ export function LerenPlannen() {
                         />
                       </label>
                       <span className="leren__dagnaam">{dagTitel(d)}</span>
-                      <input
+                      <KiesVeld
                         type="time"
                         className="leren__tijd"
                         aria-label={`Tijd op ${dagTitel(d)}`}

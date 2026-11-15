@@ -1,3 +1,4 @@
+import { vergeetBijgewerkt } from '../lib/bijgewerkt';
 import { Link } from 'react-router-dom';
 import { CalendarArrowDown, CalendarX, Library, PartyPopper, Signpost, ChevronRight, ClipboardList, Mail, Settings, type LucideIcon } from 'lucide-react';
 import { api } from '../api';
@@ -45,6 +46,7 @@ export function Meer() {
         onKiesKind={async (id) => {
           await api.kiesKind(id);
           vergeetGeladen();
+          vergeetBijgewerkt();
           await profiel.vernieuw();
         }}
       />

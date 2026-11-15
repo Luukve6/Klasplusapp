@@ -1,3 +1,4 @@
+import { KiesVeld } from '../components/ui/KiesVeld';
 import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Invoerrij, opMoment } from '../components/les/Invoerrij';
@@ -120,6 +121,30 @@ function AfspraakFormulier({ bestaand, startdag }: { bestaand?: Bestaand; startd
 
   const kiesBegin = (waarde: string) => verschuifBegin(waarde, beginTijd);
 
+  /**
+   * Een einde vóór het begin: dan schuift het begin terug, zodat de afspraak even lang blijft
+   * (zoals het einde meeschuift met het begin). Een einde ná het begin verandert alleen het einde.
+   */
+  const verschuifEinde = (datum: string, tijdstip: string) => {
+    const oudBegin = vanInvoer(beginDatum) && beginTijd ? opMoment(beginDatum, beginTijd) : null;
+    const oudEinde = vanInvoer(eindDatum) && eindTijd ? opMoment(eindDatum, eindTijd) : null;
+    setEindDatum(datum);
+    setEindTijd(tijdstip);
+    if (!vanInvoer(datum) || !tijdstip || !vanInvoer(beginDatum)) return;
+    if (heleDag) {
+      if (datum >= beginDatum) return;
+      const dagen = oudBegin && oudEinde ? Math.round((vanInvoer(eindDatum)!.getTime() - vanInvoer(beginDatum)!.getTime()) / 86_400_000) : 0;
+      setBeginDatum(naarInvoer(plusDagen(vanInvoer(datum)!, -Math.max(dagen, 0))));
+      return;
+    }
+    const nieuwEinde = opMoment(datum, tijdstip);
+    if (!oudBegin || nieuwEinde > oudBegin) return;
+    const duur = oudEinde && oudEinde > oudBegin ? oudEinde.getTime() - oudBegin.getTime() : 60 * 60_000;
+    const nieuwBegin = new Date(nieuwEinde.getTime() - duur);
+    setBeginDatum(naarInvoer(nieuwBegin));
+    setBeginTijd(tijd(nieuwBegin));
+  };
+
   const opslaan = async () => {
     if (!titel.trim()) return setFout('Geef de afspraak een titel.');
     if (!vanInvoer(beginDatum) || !vanInvoer(eindDatum)) return setFout('Kies een begin- en einddatum.');
@@ -190,25 +215,24 @@ function AfspraakFormulier({ bestaand, startdag }: { bestaand?: Bestaand; startd
             <input type="checkbox" role="switch" checked={heleDag} onChange={(e) => setHeleDag(e.target.checked)} />
           </label>
           <Invoerrij label="Begindatum" voor="begindatum">
-            <input id="begindatum" type="date" className="invoerrij__veld" value={beginDatum} onChange={(e) => kiesBegin(e.target.value)} />
+            <KiesVeld id="begindatum" type="date" className="invoerrij__veld" value={beginDatum} onChange={(e) => kiesBegin(e.target.value)} />
           </Invoerrij>
           <Invoerrij label="Einddatum" voor="einddatum">
-            <input
+            <KiesVeld
               id="einddatum"
               type="date"
               className="invoerrij__veld"
               value={eindDatum}
-              min={beginDatum}
-              onChange={(e) => setEindDatum(e.target.value)}
+              onChange={(e) => verschuifEinde(e.target.value, eindTijd)}
             />
           </Invoerrij>
           {!heleDag && (
             <>
               <Invoerrij label="Begintijd" voor="begintijd">
-                <input id="begintijd" type="time" className="invoerrij__veld" value={beginTijd} onChange={(e) => verschuifBegin(beginDatum, e.target.value)} />
+                <KiesVeld id="begintijd" type="time" className="invoerrij__veld" value={beginTijd} onChange={(e) => verschuifBegin(beginDatum, e.target.value)} />
               </Invoerrij>
               <Invoerrij label="Eindtijd" voor="eindtijd">
-                <input id="eindtijd" type="time" className="invoerrij__veld" value={eindTijd} onChange={(e) => setEindTijd(e.target.value)} />
+                <KiesVeld id="eindtijd" type="time" className="invoerrij__veld" value={eindTijd} onChange={(e) => verschuifEinde(eindDatum, e.target.value)} />
               </Invoerrij>
             </>
           )}

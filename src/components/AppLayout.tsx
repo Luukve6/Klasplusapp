@@ -6,6 +6,8 @@ import { LaagZichtbaar, LagenContext } from '../lib/laag';
 import { paginaRoutes, TABS } from '../paginaRoutes';
 import { TabBar } from './TabBar';
 import { UpdateBalk } from './UpdateBalk';
+import { BijgewerktBalk } from './ui/BijgewerktBalk';
+import '../hooks/bronnen';
 
 /** Eén pagina in de stapel, met de plek in de browsergeschiedenis waar hij hoort. */
 interface Laag {
@@ -25,6 +27,9 @@ const DUUR = 240;
 /** In een invoerveld (tekst selecteren, cursor verplaatsen) telt vegen niet. */
 const inInvoer = (doel: EventTarget | null) =>
   doel instanceof Element && !!doel.closest('input, textarea, select, [contenteditable="true"]');
+
+/** Pagina's waar de balk "Bijgewerkt op" boven de tabbalk staat. */
+const MET_BIJGEWERKT = ['/', '/huiswerk', '/cijfers', '/cijfers/gemiddeldes'];
 
 /**
  * Scherm met de pagina's en de vaste tabbalk onderin.
@@ -181,6 +186,8 @@ export function AppLayout() {
             );
           })}
         </main>
+        {/* Alleen op de hoofdpagina's met schoolgegevens; hoort bij de tabbalk, niet bij de pagina. */}
+        {MET_BIJGEWERKT.includes(lagen[lagen.length - 1].location.pathname) && <BijgewerktBalk />}
         <UpdateBalk />
         <TabBar naarTab={naarTab} />
       </div>

@@ -16,10 +16,14 @@ const tabs: Tab[] = [
   { pad: '/meer', label: 'Meer', icoon: Ellipsis, actief: (p) => p.startsWith('/meer') || p.startsWith('/instellingen') },
 ];
 
-/** Velden waarin je typt (dus waarbij het toetsenbord opkomt); geen vinkjes, knoppen of schuifjes. */
+/**
+ * Velden waarin je typt (dus waarbij het toetsenbord opkomt). Geen keuzelijsten, datum- en tijdkiezers,
+ * vinkjes of knoppen: die openen geen toetsenbord, en op iOS verliezen ze hun focus niet altijd netjes,
+ * waardoor de tabbalk dan wegbleef.
+ */
 const typVeld = (el: Element | null) =>
   !!el?.matches(
-    'textarea, select, [contenteditable="true"], input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="range"]):not([type="file"])',
+    'textarea, [contenteditable="true"], input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="range"]):not([type="file"]):not([type="date"]):not([type="time"]):not([type="datetime-local"]):not([type="month"]):not([type="week"]):not([type="color"])',
   );
 
 /**

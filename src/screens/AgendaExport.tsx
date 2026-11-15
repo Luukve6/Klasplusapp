@@ -1,3 +1,4 @@
+import { KiesVeld } from '../components/ui/KiesVeld';
 import { useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { api } from '../api';
@@ -103,25 +104,28 @@ export function AgendaExport() {
       <Sectie titel="Periode">
         <section className="kaart">
           <Invoerrij label="Van" voor="export-van">
-            <input
+            <KiesVeld
               id="export-van"
               type="date"
               className="invoerrij__veld"
               value={van}
               onChange={(e) => {
                 setVan(e.target.value);
+                // "Tot en met" schuift mee als hij anders vóór "van" zou liggen.
+                if (e.target.value && tot < e.target.value) setTot(e.target.value);
                 setMelding(null);
               }}
             />
           </Invoerrij>
           <Invoerrij label="Tot en met" voor="export-tot">
-            <input
+            <KiesVeld
               id="export-tot"
               type="date"
               className="invoerrij__veld"
               value={tot}
               onChange={(e) => {
                 setTot(e.target.value);
+                if (e.target.value && van > e.target.value) setVan(e.target.value);
                 setMelding(null);
               }}
             />

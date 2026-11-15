@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Invoerrij } from '../components/les/Invoerrij';
 import { PaginaKop } from '../components/ui/PaginaKop';
 import { Sectie } from '../components/ui/Sectie';
@@ -56,6 +57,8 @@ function UitkomstRij({ uitkomst }: { uitkomst: Uitkomst }) {
  */
 export function CijferCalculator() {
   const { cijfers, sub } = useCijfers();
+  // Geopend vanaf Gemiddeldes: dan brengt terug je daar weer.
+  const vanGemiddeldes = useSearchParams()[0].get('van') === 'gemiddeldes';
   const vakken = cijfers ? perVak(cijfers) : [];
 
   const [vakCode, setVakCode] = useState('');
@@ -69,7 +72,11 @@ export function CijferCalculator() {
 
   const kop = (
     <VasteKop>
-      <TerugLink naar="/cijfers" label="Cijfers" />
+      {vanGemiddeldes ? (
+        <TerugLink naar="/cijfers/gemiddeldes" label="Gemiddeldes" />
+      ) : (
+        <TerugLink naar="/cijfers" label="Cijfers" />
+      )}
       <PaginaKop titel="Cijfercalculator" sub={sub} />
     </VasteKop>
   );

@@ -4,14 +4,16 @@ import { Plus } from 'lucide-react';
 import { api, type Afspraak } from '../api';
 import { AgendaKop } from '../components/agenda/AgendaKop';
 import { DagStrook } from '../components/agenda/DagStrook';
-import { LesRij } from '../components/agenda/LesRij';
-import { opDag, WeekKoppen, WeekRooster } from '../components/agenda/WeekRooster';
-import { BijgewerktBalk } from '../components/ui/BijgewerktBalk';
+import { LesRij, TussenuurRij } from '../components/agenda/LesRij';
+import { isTussenuur, metTussenuren } from '../components/agenda/tussenuren';
+import { meerdaags, opDag, WeekKoppen, WeekRooster } from '../components/agenda/WeekRooster';
+import { laadWeken } from '../hooks/bronnen';
+import { verversAlles } from '../lib/bijgewerkt';
 import { VeegCarrousel } from '../components/ui/VeegCarrousel';
 import { VegenOmTeVernieuwen } from '../components/ui/VegenOmTeVernieuwen';
 import { useLaden } from '../hooks/useLaden';
 import { useInstellingen } from '../lib/instellingen';
-import { bewaarLeerplan, metLeermomenten, useLeerplannen, verwijderLeerplan, volgSchool } from '../lib/leerplan';
+import { bewaarLeerplan, lesLink, metLeermomenten, useLeerplannen, verwijderLeerplan, volgSchool } from '../lib/leerplan';
 import { useLaagZichtbaar } from '../lib/laag';
 import { beginVanDag, isWeekdag, maandagVan, naarInvoer, plusDagen, zelfdeDag } from '../lib/datum';
 import '../components/ui/ui.css';
@@ -42,7 +44,7 @@ export function Agenda() {
 
   // De week plus de week ervoor en erna in één keer ophalen: wisselen tussen dagen gaat dan direct,
   // en bij het vegen staat de buurdag (ook over de weekgrens) al klaar.
-  const week = useLaden(() => api.afspraken(plusDagen(maandag, -7), plusDagen(maandag, 14)), [maandag.getTime()]);
+  const week = useLaden(() => laadWeken(maandag), [maandag.getTime()], 'weken');
   const weekGeladen = week.data && !week.laden && !week.fout;
   // Leermomenten uit je leerplannen staan tussen de lessen (alleen op dit toestel).
   const plannen = useLeerplannen();
@@ -114,19 +116,35 @@ export function Agenda() {
 
   /** De lessen van één dag, zoals in de lijst; ook voor de buurdagen in de schuifbaan. */
   const dagLijst = (d: Date) => {
-    const lessen = lessenOp(d);
+    const alles = lessenOp(d);
+    // Hele dag of over meer dagen (zoals een toetsrooster): als smal balkje bovenin, net als in de week.
+    const balken = alles.filter((a) => a.heleDag || meerdaags(a));
+    const lessen = alles.filter((a) => !a.heleDag && !meerdaags(a));
     const licht = zelfdeDag(d, new Date(nu)) ? uitgelicht(lessen) : null;
     return (
       <>
+        {balken.length > 0 && (
+          <div className="agenda__heledag">
+            {balken.map((a) => (
+              <Link key={a.id} to={lesLink(a)} className="weekbalk" aria-label={`${a.omschrijving}, hele dag`}>
+                {a.omschrijving}
+              </Link>
+            ))}
+          </div>
+        )}
         {lessen.length > 0 && (
           <section className="agenda__kaart">
-            {lessen.map((a) => (
-              <LesRij key={a.id} afspraak={a} bezig={a.id === licht} />
-            ))}
+            {metTussenuren(lessen, alleAfspraken).map((a) =>
+              isTussenuur(a) ? (
+                <TussenuurRij key={`tussen-${a.start}`} tussenuur={a} />
+              ) : (
+                <LesRij key={a.id} afspraak={a} bezig={a.id === licht} />
+              ),
+            )}
           </section>
         )}
-        {!week.data && !week.fout && lessen.length === 0 && <LaadKaart rijen={6} />}
-        {weekGeladen && lessen.length === 0 && <p className="melding">Geen afspraken op deze dag.</p>}
+        {!week.data && !week.fout && alles.length === 0 && <LaadKaart rijen={6} />}
+        {weekGeladen && alles.length === 0 && <p className="melding">Geen afspraken op deze dag.</p>}
       </>
     );
   };
@@ -227,7 +245,7 @@ export function Agenda() {
 
       <div className="agenda__midden">
         <div className={`agenda__lijst${perWeek ? ' agenda__lijst--week' : ''}`} ref={lijstVlak} aria-busy={week.laden}>
-          <VegenOmTeVernieuwen onVernieuw={week.vernieuw}>
+          <VegenOmTeVernieuwen onVernieuw={() => verversAlles(week.vernieuw, 'weken')}>
             {week.fout && <p className="melding">{week.fout}</p>}
             {/* Vegen over de lessen: naar links de volgende dag, naar rechts de vorige, en je ziet hem binnenschuiven. */}
             {perWeek ? (
@@ -263,7 +281,6 @@ export function Agenda() {
         )}
       </div>
 
-      <BijgewerktBalk resultaat={week.data} />
     </div>
   );
 }

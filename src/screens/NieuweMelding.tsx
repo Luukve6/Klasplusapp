@@ -1,3 +1,4 @@
+import { KiesVeld } from '../components/ui/KiesVeld';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, type MeldingInvoer, type MeldOpties } from '../api';
@@ -16,6 +17,13 @@ import '../components/afwezigheid/afwezigheid.css';
 import { LaadKaart } from '../components/ui/Laden';
 
 /** Afwezig melden, in dezelfde opbouw als een nieuwe afspraak. Wat er mag, bepaalt de school. */
+/** "08:30" plus of min een aantal minuten, binnen dezelfde dag (00:00 tot 23:59). */
+function plusMinuten(tijdstip: string, minuten: number): string {
+  const [u, m] = tijdstip.split(':').map(Number);
+  const totaal = Math.min(23 * 60 + 59, Math.max(0, u * 60 + m + minuten));
+  return `${String(Math.floor(totaal / 60)).padStart(2, '0')}:${String(totaal % 60).padStart(2, '0')}`;
+}
+
 export function NieuweMelding() {
   const opties = useLaden(() => api.meldOpties(), []);
 
@@ -69,10 +77,28 @@ function MeldFormulier({ opties }: { opties: MeldOpties }) {
       setBevestigen(null);
     };
 
+  // Het einde ligt nooit vóór het begin: kies je een begin erna, dan schuift het einde mee; kies je een
+  // einde ervoor, dan schuift het begin mee. Bij tijden op dezelfde dag houden we een uur ertussen.
   const kiesBegin = wijzig((waarde: string) => {
     setBeginDatum(waarde);
-    // Einde mag niet vóór het begin liggen.
     if (waarde && eindDatum < waarde) setEindDatum(waarde);
+  });
+
+  const kiesEinde = wijzig((waarde: string) => {
+    setEindDatum(waarde);
+    if (waarde && beginDatum > waarde) setBeginDatum(waarde);
+  });
+
+  const zelfdeDag = beginDatum === eindDatum;
+
+  const kiesBeginTijd = wijzig((waarde: string) => {
+    setBeginTijd(waarde);
+    if (waarde && zelfdeDag && eindTijd <= waarde) setEindTijd(plusMinuten(waarde, 60));
+  });
+
+  const kiesEindTijd = wijzig((waarde: string) => {
+    setEindTijd(waarde);
+    if (waarde && zelfdeDag && beginTijd >= waarde) setBeginTijd(plusMinuten(waarde, -60));
   });
 
   const controleer = () => {
@@ -166,7 +192,7 @@ function MeldFormulier({ opties }: { opties: MeldOpties }) {
           )}
           <Invoerrij label="Begin" voor="begindatum">
             <span className="invoerrij__velden">
-              <input
+              <KiesVeld
                 id="begindatum"
                 type="date"
                 className="invoerrij__veld"
@@ -176,34 +202,34 @@ function MeldFormulier({ opties }: { opties: MeldOpties }) {
                 onChange={(e) => kiesBegin(e.target.value)}
               />
               {!heleDag && (
-                <input
+                <KiesVeld
                   type="time"
                   aria-label="Begintijd"
                   className="invoerrij__veld invoerrij__tijd"
                   value={beginTijd}
-                  onChange={(e) => wijzig(setBeginTijd)(e.target.value)}
+                  onChange={(e) => kiesBeginTijd(e.target.value)}
                 />
               )}
             </span>
           </Invoerrij>
           <Invoerrij label="Einde" voor="einddatum">
             <span className="invoerrij__velden">
-              <input
+              <KiesVeld
                 id="einddatum"
                 type="date"
                 className="invoerrij__veld"
                 value={eindDatum}
-                min={beginDatum}
+                min={eerste}
                 max={laatste}
-                onChange={(e) => wijzig(setEindDatum)(e.target.value)}
+                onChange={(e) => kiesEinde(e.target.value)}
               />
               {!heleDag && (
-                <input
+                <KiesVeld
                   type="time"
                   aria-label="Eindtijd"
                   className="invoerrij__veld invoerrij__tijd"
                   value={eindTijd}
-                  onChange={(e) => wijzig(setEindTijd)(e.target.value)}
+                  onChange={(e) => kiesEindTijd(e.target.value)}
                 />
               )}
             </span>

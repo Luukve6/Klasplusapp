@@ -72,7 +72,20 @@ export function examenNiveau(p: Pick<Profiel, 'klas' | 'klasInfo'> | null | unde
   const keuze = leesNiveauKeuze();
   if (keuze === 'geen') return null;
   if (keuze !== 'auto') return keuze;
-  return herkenNiveau(klasTekst(p));
+  return herkenNiveau(klasTekstMetGeheugen(p));
+}
+
+/**
+ * De klas om het examenjaar aan te herkennen. Na het opstarten is het profiel er nog niet meteen; dan de
+ * klas van de vorige keer, zodat er niet eerst heel even "Overgang" staat en daarna "Examen".
+ * (Uitloggen wist dit, net als de rest van de opslag.)
+ */
+const KLAS_SLEUTEL = 'examen.klas';
+function klasTekstMetGeheugen(p: Pick<Profiel, 'klas' | 'klasInfo'> | null | undefined): string {
+  if (!p) return lees<string>(KLAS_SLEUTEL) ?? '';
+  const tekst = klasTekst(p);
+  if (lees<string>(KLAS_SLEUTEL) !== tekst) schrijf(KLAS_SLEUTEL, tekst);
+  return tekst;
 }
 
 /**

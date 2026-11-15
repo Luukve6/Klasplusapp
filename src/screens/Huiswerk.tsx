@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { api, type Afspraak, type Label } from '../api';
+import type { Afspraak, Label } from '../api';
 import { HuiswerkRij } from '../components/huiswerk/HuiswerkRij';
-import { BijgewerktBalk } from '../components/ui/BijgewerktBalk';
+import { laadWeken } from '../hooks/bronnen';
+import { verversAlles } from '../lib/bijgewerkt';
 import { Sectie } from '../components/ui/Sectie';
 import { VeegCarrousel } from '../components/ui/VeegCarrousel';
 import { VegenOmTeVernieuwen } from '../components/ui/VegenOmTeVernieuwen';
@@ -34,7 +35,7 @@ export function Huiswerk() {
   const dezeWeek = maandagVan(new Date());
 
   // Deze week plus de week ervoor en erna: bij het vegen staat de buurweek al klaar.
-  const geladen = useLaden(() => api.afspraken(plusDagen(week, -7), plusDagen(week, 14)), [week.getTime()]);
+  const geladen = useLaden(() => laadWeken(week), [week.getTime()], 'weken');
   const klaar = geladen.data && !geladen.laden && !geladen.fout;
   // Vegen kan over de hele lijst, ook het lege stuk eronder tot aan de balk.
   const lijstVlak = useRef<HTMLDivElement>(null);
@@ -100,7 +101,7 @@ export function Huiswerk() {
       </header>
 
       <div className="huiswerk__lijst" ref={lijstVlak} aria-busy={geladen.laden}>
-        <VegenOmTeVernieuwen onVernieuw={geladen.vernieuw}>
+        <VegenOmTeVernieuwen onVernieuw={() => verversAlles(geladen.vernieuw, 'weken')}>
           <div className="pagina">
             {geladen.fout && <p className="melding">{geladen.fout}</p>}
             {/* Vegen: naar links de volgende week, naar rechts de vorige, en je ziet hem binnenschuiven. */}
@@ -117,7 +118,6 @@ export function Huiswerk() {
         </VegenOmTeVernieuwen>
       </div>
 
-      <BijgewerktBalk resultaat={geladen.data} />
     </div>
   );
 }

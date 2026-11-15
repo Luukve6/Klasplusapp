@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Calculator } from 'lucide-react';
 import { CijferRij } from '../components/cijfers/CijferRij';
-import { BijgewerktBalk } from '../components/ui/BijgewerktBalk';
+import { isDemo } from '../api';
+import { verversAlles } from '../lib/bijgewerkt';
 import { Sectie } from '../components/ui/Sectie';
 import { VegenOmTeVernieuwen } from '../components/ui/VegenOmTeVernieuwen';
 import { useCijfers } from '../hooks/useCijfers';
@@ -16,16 +17,21 @@ import { LaadRijen } from '../components/ui/Laden';
 const AANTAL_RECENT = 20;
 
 export function Cijfers() {
-  const { cijfers, profiel, resultaat, fout, vernieuw } = useCijfers();
+  const { cijfers, profiel, fout, vernieuw } = useCijfers();
   // Net als op de andere schermen: titel groot, daaronder klas en periode.
   const onder = [profiel?.klas, profiel?.periode].filter(Boolean).join(' · ');
   // In het examenjaar (5 havo, 6 vwo) is er geen overgang maar een eindexamen.
   const examen = !!examenNiveau(profiel);
   // Cijfers die vandaag voor het eerst binnenkwamen; per kind apart bij een ouder. Wacht op het profiel,
   // zodat we weten van wie de cijfers zijn.
+  // In de demo komt er nooit iets binnen; daar tellen de drie nieuwste cijfers als nieuw, zodat je het ziet.
   const nieuw = useMemo(
     () =>
-      cijfers && profiel ? nieuwVandaag(cijfers, profiel.ouder ? String(profiel.ouder.gekozen) : 'ik') : new Set<string>(),
+      !cijfers || !profiel
+        ? new Set<string>()
+        : isDemo
+          ? new Set(meestRecent(cijfers, 3).map((c) => c.id))
+          : nieuwVandaag(cijfers, profiel.ouder ? String(profiel.ouder.gekozen) : 'ik'),
     [cijfers, profiel],
   );
   // Vandaag binnengekomen cijfers altijd bovenaan, ook als de toetsdatum ouder is (Cijfertijd);
@@ -57,7 +63,7 @@ export function Cijfers() {
 
       <div className="agenda__midden">
         <div className="scherm__lijst">
-          <VegenOmTeVernieuwen onVernieuw={vernieuw}>
+          <VegenOmTeVernieuwen onVernieuw={() => verversAlles(vernieuw, 'cijfers')}>
             <div className="pagina pagina--onder-kop">
               <Sectie titel="Recent">
                 <section className="kaart" aria-busy={!cijfers}>
@@ -80,7 +86,6 @@ export function Cijfers() {
         </Link>
       </div>
 
-      <BijgewerktBalk resultaat={resultaat} />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { KiesVeld } from '../ui/KiesVeld';
 import { useEffect, useState } from 'react';
 import { useInstellingen, wijzigInstellingen, type Notificaties } from '../../lib/instellingen';
 import {
@@ -78,7 +79,7 @@ export function MeldingenKiezer() {
               </label>
               {t && n[k.sleutel] && (
                 <Invoerrij label={t.label} voor={`melding-${t.veld}`}>
-                  <input
+                  <KiesVeld
                     id={`melding-${t.veld}`}
                     type="time"
                     className="invoerrij__veld"

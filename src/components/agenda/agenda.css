@@ -726,3 +726,29 @@
 .agendakop--twee-knoppen .agendakop__tekst {
   flex: 0 0 auto;
 }
+
+/* Tussenuur: zelfde rij als een les, maar rustiger (gestippeld vierkantje, zachte tekst). */
+.lesrij--tussen .lesrij__titel {
+  font-weight: 600;
+  color: var(--tekst-secundair);
+}
+
+.lesrij__uur--tussen {
+  background: transparent;
+  border: 1.5px dashed color-mix(in srgb, var(--tekst-secundair) 45%, transparent);
+  color: var(--tekst-secundair);
+  font-size: 13px;
+}
+
+/* Dagweergave: afspraken voor de hele dag als smalle balkjes boven de lessen, net als in de week. */
+.agenda__heledag {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+/* Leren of huiswerk maken (ingepland met Klas+): een icoontje in het lichte vakje. */
+.lesrij__uur--leeg svg {
+  color: var(--groen-tekst);
+}

@@ -1,10 +1,13 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Calculator } from 'lucide-react';
 import { VakRij } from '../components/cijfers/VakRij';
 import { OfflineRegel } from '../components/ui/OfflineRegel';
 import { PaginaKop } from '../components/ui/PaginaKop';
 import { TerugLink } from '../components/ui/TerugLink';
 import { VegenOmTeVernieuwen } from '../components/ui/VegenOmTeVernieuwen';
 import { useCijfers } from '../hooks/useCijfers';
+import { verversAlles } from '../lib/bijgewerkt';
 import { perVak } from '../lib/cijfers';
 import '../components/ui/ui.css';
 import '../components/agenda/agenda.css';
@@ -24,24 +27,31 @@ export function Gemiddeldes() {
         <OfflineRegel resultaat={resultaat} />
       </div>
 
-      <div className="scherm__lijst">
-        <VegenOmTeVernieuwen onVernieuw={vernieuw}>
-          <div className="pagina pagina--onder-kop">
-            <section className="kaart kaart--vakken" aria-busy={!cijfers}>
-              {!cijfers && !fout && <LaadRijen rijen={6} />}
-              {fout && <p className="melding">{fout}</p>}
-              {cijfers &&
-                perVak(cijfers).map((o) => (
-                  <VakRij
-                    key={o.vak.code}
-                    overzicht={o}
-                    open={openVak === o.vak.code}
-                    onWissel={() => setOpenVak(openVak === o.vak.code ? null : o.vak.code)}
-                  />
-                ))}
-            </section>
-          </div>
-        </VegenOmTeVernieuwen>
+      <div className="agenda__midden">
+        <div className="scherm__lijst">
+          <VegenOmTeVernieuwen onVernieuw={() => verversAlles(vernieuw, 'cijfers')}>
+            <div className="pagina pagina--onder-kop">
+              <section className="kaart kaart--vakken" aria-busy={!cijfers}>
+                {!cijfers && !fout && <LaadRijen rijen={6} />}
+                {fout && <p className="melding">{fout}</p>}
+                {cijfers &&
+                  perVak(cijfers).map((o) => (
+                    <VakRij
+                      key={o.vak.code}
+                      overzicht={o}
+                      open={openVak === o.vak.code}
+                      onWissel={() => setOpenVak(openVak === o.vak.code ? null : o.vak.code)}
+                    />
+                  ))}
+              </section>
+            </div>
+          </VegenOmTeVernieuwen>
+        </div>
+
+        {/* Dezelfde rekenmachineknop als op Cijfers; terug brengt je dan hier. */}
+        <Link to="/cijfers/calculator?van=gemiddeldes" className="plusknop" aria-label="Cijfercalculator">
+          <Calculator size={24} strokeWidth={2.2} aria-hidden="true" />
+        </Link>
       </div>
     </div>
   );

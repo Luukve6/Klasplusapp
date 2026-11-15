@@ -1,3 +1,4 @@
+import { vergeetBijgewerkt } from '../lib/bijgewerkt';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronRight, ExternalLink } from 'lucide-react';
 import { version } from '../../package.json';
@@ -33,6 +34,7 @@ export function Instellingen() {
     wisLeerplannen();
     wisAlles();
     vergeetGeladen();
+    vergeetBijgewerkt();
     herstelInstellingen();
     zetOngelezen(0);
     navigate('/inloggen', { replace: true });

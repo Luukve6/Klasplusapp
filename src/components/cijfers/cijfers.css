@@ -29,10 +29,20 @@
 }
 
 /* Cijfer en weging blijven altijd heel: deze kolom krimpt nooit en breekt niet af. */
-/* Vandaag binnengekomen: dezelfde kleur als de tekst van de Gemiddeldes-knop. */
-.cijferrij__nieuw {
-  font-weight: 700;
-  color: var(--groen-tekst);
+/* Vandaag binnengekomen: een groen lijntje links van het vak, in de rand van de kaart. */
+.cijferrij--nieuw {
+  position: relative;
+}
+
+.cijferrij--nieuw::after {
+  content: '';
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: -10px;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--groen-tekst);
 }
 
 .cijferrij__rechts {
