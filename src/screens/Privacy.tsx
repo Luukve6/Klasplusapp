@@ -46,8 +46,9 @@ export function Privacy({ van = 'instellingen' }: { van?: 'meer' | 'instellingen
         <h2>Meldingen</h2>
         <p>
           Zet je meldingen aan, dan kijkt Klas+ zelf of er een nieuw cijfer is of een uur vervalt of wijzigt, en plant
-          het huiswerkherinneringen in. Dat gebeurt op je telefoon, als je de app opent en af en toe op de achtergrond.
-          Er is geen server die meekijkt of berichten stuurt; de meldingen komen van je eigen telefoon.
+          het herinneringen in voor huiswerk, je ochtendmelding en je leermomenten. Dat gebeurt op je telefoon, als je
+          de app opent en af en toe op de achtergrond; vlak voor de ochtendmelding haalt je telefoon zelf nog even je
+          rooster op. Er is geen server die meekijkt of berichten stuurt; de meldingen komen van je eigen telefoon.
         </p>
 
         <h2>Waar staan je gegevens?</h2>

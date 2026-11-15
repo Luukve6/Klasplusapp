@@ -11,6 +11,8 @@ import { lees, schrijf, verwijder } from './opslag';
 import { ochtendMelding } from './ochtendmelding';
 import { metHoofdletter } from './tekst';
 import { isAndroid, Ochtend, type OchtendPlan } from './ochtendNative';
+import { alleLeerplannen, isMaken, lerenTitel, notitieVan } from './leerplan';
+import { opMoment } from '../components/les/Invoerrij';
 
 /** Alleen in de telefoon-app; in de browser (demo) kan het niet. */
 export const kanNotificaties = Capacitor.isNativePlatform();
@@ -232,6 +234,23 @@ async function planOchtend(aan: boolean, tijdstip: string) {
     return;
   }
   if (meldingen.length) await LocalNotifications.schedule({ notifications: meldingen });
+  if (Capacitor.getPlatform() === 'ios') await planVersOchtend(meldingen[0]?.schedule.at).catch(() => undefined);
+}
+
+/**
+ * iPhone: iOS laat een app niet op een vast tijdstip wakker worden. Wel kunnen we vragen om ongeveer een
+ * uur voor de ochtendmelding even te mogen draaien (een "processing task"). iOS doet dat vooral als de
+ * telefoon aan de oplader ligt, zoals 's nachts. Lukt het, dan haalt Klas+ het rooster op en vervangt de
+ * ochtendmelding door een met de stand van dat moment. Lukt het niet, dan komt de melding gewoon met de
+ * stand van de laatste keer dat Klas+ keek.
+ */
+const OCHTEND_TAAK = 'com.transistorsoft.ochtend';
+async function planVersOchtend(at: Date | undefined) {
+  await BackgroundFetch.stop(OCHTEND_TAAK).catch(() => undefined);
+  if (!at) return;
+  const wacht = at.getTime() - 60 * 60_000 - Date.now();
+  if (wacht < 60_000) return;
+  await BackgroundFetch.scheduleTask({ taskId: OCHTEND_TAAK, delay: wacht, periodic: false, requiresNetworkConnectivity: true });
 }
 
 // ---- Leerherinneringen ----
@@ -240,11 +259,33 @@ const wisLeren = () =>
   LocalNotifications.cancel({ notifications: Array.from({ length: LEREN_MAX }, (_, i) => ({ id: LEREN_EERSTE + i })) });
 
 /**
- * Herinneringen voor leermomenten staan uit (meldingen werken nog niet betrouwbaar genoeg). Wat een
- * eerdere versie al had ingepland, halen we hier weg.
+ * Een melding op elk leermoment (leren voor een toets of huiswerk maken) dat nog moet komen. Ze staan
+ * vooruit ingepland op het toestel, dus ze komen ook als Klas+ dicht is; op Android op de precieze tijd
+ * zolang "Op de precieze tijd" aan staat. Elke keer dat Klas+ kijkt, worden ze helemaal vervangen, zodat
+ * een verschoven of verwijderd moment klopt.
  */
-async function planLeren() {
+async function planLeren(aan: boolean) {
   await wisLeren();
+  if (!aan) return;
+  const meldingen = [];
+  for (const p of Object.values(alleLeerplannen())) {
+    for (const m of p.momenten) {
+      const moment = opMoment(m.datum, m.tijd);
+      if (!m.aan || moment.getTime() <= Date.now() || meldingen.length >= LEREN_MAX) continue;
+      const notitie = notitieVan(p, m);
+      meldingen.push({
+        id: LEREN_EERSTE + meldingen.length,
+        title: lerenTitel(p),
+        body:
+          notitie ||
+          `${isMaken(p) ? 'Huiswerk' : p.soort} voor ${dagNaam(new Date(p.toetsStart)).toLowerCase()}. Je had ${m.duur ?? p.duur} minuten gepland.`,
+        schedule: { at: moment, allowWhileIdle: true },
+        channelId: KANAAL,
+        extra: { pad: `/leren/${encodeURIComponent(p.toetsId)}` },
+      });
+    }
+  }
+  if (meldingen.length) await LocalNotifications.schedule({ notifications: meldingen });
 }
 
 // ---- Alles samen ----
@@ -270,7 +311,7 @@ export function controleerNu(altijd = false, opAchtergrond = false): Promise<voi
     if (n.rooster) await controleerRooster().catch(() => undefined);
     await planHuiswerk(n.huiswerk, n.huiswerkTijd).catch(() => undefined);
     await planOchtend(n.ochtend, n.ochtendTijd).catch(() => undefined);
-    await planLeren().catch(() => undefined);
+    await planLeren(n.leren).catch(() => undefined);
     schrijf(LAATSTE, { op: new Date().toISOString(), achtergrond: opAchtergrond });
   })().finally(() => {
     bezig = null;

@@ -16,11 +16,12 @@ import { Invoerrij } from '../les/Invoerrij';
 import '../les/les.css';
 import './instellingen.css';
 
-const keuzes: { sleutel: 'cijfers' | 'rooster' | 'huiswerk' | 'ochtend'; naam: string; uitleg: string }[] = [
+const keuzes: { sleutel: 'cijfers' | 'rooster' | 'huiswerk' | 'ochtend' | 'leren'; naam: string; uitleg: string }[] = [
   { sleutel: 'cijfers', naam: 'Nieuw cijfer', uitleg: 'Zodra er een cijfer binnenkomt' },
   { sleutel: 'rooster', naam: 'Uur vervallen of gewijzigd', uitleg: 'Ander lokaal, andere docent of verplaatst' },
   { sleutel: 'huiswerk', naam: 'Huiswerkherinnering', uitleg: 'De avond ervoor, als het nog niet is afgevinkt' },
   { sleutel: 'ochtend', naam: 'Ochtendmelding', uitleg: 'Je eerste les, en wat er die dag vervalt of gewijzigd is' },
+  { sleutel: 'leren', naam: 'Leermomenten', uitleg: 'Als je gaat leren of huiswerk maken dat je met Klas+ inplande' },
 ];
 
 /** Bij welke melding hoort een tijdstip, en onder welk label. */
@@ -44,7 +45,7 @@ export function MeldingenKiezer() {
     document.addEventListener('visibilitychange', opZicht);
     return () => document.removeEventListener('visibilitychange', opZicht);
   }, []);
-  const iets = n.cijfers || n.rooster || n.huiswerk || n.ochtend;
+  const iets = n.cijfers || n.rooster || n.huiswerk || n.ochtend || n.leren;
 
   const zet = async (wijziging: Partial<Notificaties>) => {
     setFout(null);

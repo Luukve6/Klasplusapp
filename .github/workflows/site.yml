@@ -36,7 +36,7 @@ jobs:
       - name: Pagina samenstellen
         run: |
           mkdir -p _pagina/screenshots
-          cp site/index.html _pagina/
+          cp site/*.html _pagina/
           cp public/icoon.svg _pagina/
           cp screenshots/*.png _pagina/screenshots/
 

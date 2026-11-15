@@ -27,6 +27,8 @@ export interface Notificaties {
   ochtend: boolean;
   /** Tijdstip van de ochtendmelding, "07:00". */
   ochtendTijd: string;
+  /** Een melding op elk leermoment (leren of huiswerk maken) dat je met Klas+ inplande. */
+  leren: boolean;
 }
 
 export interface Instellingen {
@@ -48,7 +50,7 @@ const standaard: Instellingen = {
   indeling: 'dag',
   regio: '',
   kleur: 'groen',
-  notificaties: { cijfers: false, rooster: false, huiswerk: false, huiswerkTijd: '19:00', ochtend: false, ochtendTijd: '07:00' },
+  notificaties: { cijfers: false, rooster: false, huiswerk: false, huiswerkTijd: '19:00', ochtend: false, ochtendTijd: '07:00', leren: false },
 };
 
 function lees(): Instellingen {
