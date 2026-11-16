@@ -10,7 +10,7 @@ import { leesInstellingen } from './instellingen';
 import { lees, schrijf, verwijder } from './opslag';
 import { ochtendMelding } from './ochtendmelding';
 import { metHoofdletter } from './tekst';
-import { isAndroid, Ochtend, type OchtendPlan } from './ochtendNative';
+import { isAndroid, Ochtend } from './ochtendNative';
 import { alleLeerplannen, isMaken, lerenTitel, notitieVan } from './leerplan';
 import { opMoment } from '../components/les/Invoerrij';
 
@@ -188,18 +188,13 @@ const wisOchtend = async () => {
   });
 };
 
-/** Wat Android nodig heeft om zelf het rooster op te halen; null in de demo. */
-function achtergrondSessie(): Pick<OchtendPlan, 'schoolUrl' | 'leerlingId' | 'ouder'> | null {
-  const s = lees<{ schoolUrl: string; persoonId: number; kindId?: number }>('live.sessie');
-  if (!s?.schoolUrl || !s.persoonId) return null;
-  return { schoolUrl: s.schoolUrl, leerlingId: s.kindId ?? s.persoonId, ouder: s.kindId !== undefined };
-}
-
 /**
  * Plant voor elke dag met lessen een melding op het gekozen tijdstip, met de stand van nu. Elke keer
  * dat Klas+ kijkt (openen, achtergrond) worden ze vervangen, zodat een latere wijziging erin komt.
- * Op Android haalt de telefoon op het tijdstip zelf nog het rooster op (OchtendWekker.java); de tekst
- * van nu is dan alleen voor als dat niet lukt.
+ *
+ * Bewust niets op de achtergrond buiten de app om (geen eigen ophaalactie op Android, geen extra iOS-taak):
+ * daarbij werd de inlogsleutel vernieuwd zonder dat de app het wist, en moest je steeds opnieuw inloggen.
+ * Ochtend.wis() en het stoppen van de iOS-taak ruimen op wat een eerdere versie nog had ingepland.
  */
 async function planOchtend(aan: boolean, tijdstip: string) {
   if (!aan) return wisOchtend();
@@ -225,33 +220,12 @@ async function planOchtend(aan: boolean, tijdstip: string) {
       extra: { pad: '/' },
     });
   }
-  const sessie = isAndroid ? achtergrondSessie() : null;
-  if (sessie) {
-    await Ochtend.plan({
-      ...sessie,
-      dagen: meldingen.map((m) => ({ op: m.schedule.at.getTime(), titel: m.title, tekst: m.body })),
-    });
-    return;
-  }
   if (meldingen.length) await LocalNotifications.schedule({ notifications: meldingen });
-  if (Capacitor.getPlatform() === 'ios') await planVersOchtend(meldingen[0]?.schedule.at).catch(() => undefined);
 }
 
-/**
- * iPhone: iOS laat een app niet op een vast tijdstip wakker worden. Wel kunnen we vragen om ongeveer een
- * uur voor de ochtendmelding even te mogen draaien (een "processing task"). iOS doet dat vooral als de
- * telefoon aan de oplader ligt, zoals 's nachts. Lukt het, dan haalt Klas+ het rooster op en vervangt de
- * ochtendmelding door een met de stand van dat moment. Lukt het niet, dan komt de melding gewoon met de
- * stand van de laatste keer dat Klas+ keek.
- */
+/** iPhone: de extra ochtendtaak van versie 0.1.18 weer weghalen. */
 const OCHTEND_TAAK = 'com.transistorsoft.ochtend';
-async function planVersOchtend(at: Date | undefined) {
-  await BackgroundFetch.stop(OCHTEND_TAAK).catch(() => undefined);
-  if (!at) return;
-  const wacht = at.getTime() - 60 * 60_000 - Date.now();
-  if (wacht < 60_000) return;
-  await BackgroundFetch.scheduleTask({ taskId: OCHTEND_TAAK, delay: wacht, periodic: false, requiresNetworkConnectivity: true });
-}
+const stopOchtendTaak = () => BackgroundFetch.stop(OCHTEND_TAAK).catch(() => undefined);
 
 // ---- Leerherinneringen ----
 
@@ -377,6 +351,7 @@ export async function startNotificaties() {
       BackgroundFetch.finish(taak);
     },
   ).catch(() => undefined);
+  if (Capacitor.getPlatform() === 'ios') void stopOchtendTaak();
 
   void controleerNu(true);
 }

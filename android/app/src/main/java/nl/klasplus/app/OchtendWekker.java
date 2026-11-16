@@ -92,27 +92,10 @@ public class OchtendWekker extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        String actie = intent.getAction();
-        if (!ACTIE.equals(actie)) {
-            // Na opnieuw opstarten of een update zijn wekkers weg: opnieuw zetten.
-            zetVolgende(context);
-            return;
-        }
-
-        JSONObject plan = leesPlan(context);
-        JSONObject dag = huidigeDag(plan);
-        zetVolgende(context);
-        if (plan == null || dag == null) return;
-
-        final PendingResult klaar = goAsync();
-        final Context app = context.getApplicationContext();
-        new Thread(() -> {
-            try {
-                toon(app, plan, dag);
-            } finally {
-                klaar.finish();
-            }
-        }).start();
+        // Uitgezet: hier werd op de achtergrond de inlogsleutel vernieuwd buiten de app om, waarna je steeds
+        // opnieuw moest inloggen. De ochtendmelding plant de app nu weer zelf vooruit (LocalNotifications).
+        // Een wekker of plan van een eerdere versie ruimen we op, zonder iets op te halen.
+        wisPlan(context);
     }
 
     /** De dag waarvoor de wekker nu gaat: het laatste tijdstip dat net voorbij is (niet ouder dan een uur). */
