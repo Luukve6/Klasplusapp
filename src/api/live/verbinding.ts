@@ -1,5 +1,6 @@
 // Verzoeken aan de schoolserver: token meesturen, op tijd vernieuwen en de limiet respecteren.
 // In de telefoon-app gaat fetch via de native HTTP (CapacitorHttp), dus zonder CORS.
+import { Capacitor } from '@capacitor/core';
 import { SESSIE_VERLOPEN } from '../SchoolApi';
 import { bewaarTokens, TokenFout, vernieuwTokens, wisTokens, type Tokens } from './auth';
 
@@ -25,6 +26,12 @@ async function bewaar(s: Sessie) {
 
 /** Eén keer tegelijk vernieuwen, ook als meerdere verzoeken tegelijk een verlopen token zien. */
 async function vernieuw(): Promise<void> {
+  // iPhone: de sleutel werkt maar één keer. Vernieuwen op de achtergrond ging soms half mis (iOS stopte
+  // Klas+ of de verbinding viel weg vóór de nieuwe sleutel bewaard was), en dan moest je opnieuw inloggen.
+  // Daarom alleen als de app in beeld is; op de achtergrond kijkt Klas+ alleen met een nog geldige sleutel.
+  if (Capacitor.getPlatform() === 'ios' && document.visibilityState !== 'visible') {
+    throw new Error('Niet vernieuwen op de achtergrond');
+  }
   vernieuwen ??= (async () => {
     const s = sessie;
     if (!s) throw new Error('Geen sessie');
