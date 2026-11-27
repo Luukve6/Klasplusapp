@@ -1,6 +1,6 @@
 // Inloggen bij het schoolsysteem met OAuth2 + PKCE, op dezelfde manier als de app Gemairo.
 // Achtergrond en bronnen: docs/inloggen-onderzoek.md.
-import { SecureStorage } from '@aparajita/capacitor-secure-storage';
+import { KeychainAccess, SecureStorage } from '@aparajita/capacitor-secure-storage';
 import { InloggenAfgebroken } from '../SchoolApi';
 
 const ACCOUNTS = 'https://accounts.magister.net';
@@ -31,7 +31,9 @@ export async function leesTokens(): Promise<Tokens | null> {
 }
 
 export async function bewaarTokens(tokens: Tokens): Promise<void> {
-  await SecureStorage.set(TOKEN_SLEUTEL, tokens as unknown as Record<string, string>, false);
+  // iOS: ook leesbaar als de telefoon op slot zit (na de eerste keer ontgrendelen). Met de standaard
+  // (alleen ontgrendeld) zag Klas+ op de achtergrond geen inlog en moest je steeds opnieuw inloggen.
+  await SecureStorage.set(TOKEN_SLEUTEL, tokens as unknown as Record<string, string>, false, undefined, KeychainAccess.afterFirstUnlock);
 }
 
 export async function wisTokens(): Promise<void> {

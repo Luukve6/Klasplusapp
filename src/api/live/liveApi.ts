@@ -212,6 +212,18 @@ export const liveApi: SchoolApi = {
     const tokens = bewaard ? await leesTokens() : null;
     zetSessie(bewaard && tokens ? { ...bewaard, tokens } : null);
     kindId = bewaard && tokens ? bewaard.kindId : undefined;
+    // Eén keer opnieuw bewaren, zodat een inlog van een oudere versie ook op slot leesbaar wordt.
+    if (tokens) void bewaarTokens(tokens).catch(() => undefined);
+    // Sessie bewaard maar inlog (nog) niet leesbaar: de telefoon zat op slot toen iOS Klas+ op de
+    // achtergrond startte. Niet uitloggen, maar opnieuw lezen zodra de app in beeld komt.
+    if (bewaard && !tokens) {
+      const probeer = async () => {
+        if (document.visibilityState !== 'visible' || !(await leesTokens())) return;
+        document.removeEventListener('visibilitychange', probeer);
+        window.location.reload();
+      };
+      document.addEventListener('visibilitychange', probeer);
+    }
   },
 
   async inloggen() {
